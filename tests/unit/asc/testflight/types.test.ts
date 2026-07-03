@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveBuildStatus } from "@/lib/asc/testflight/types";
+import { canRequestBuildExpiry, deriveBuildStatus } from "@/lib/asc/testflight/types";
 
 describe("deriveBuildStatus", () => {
   it("returns 'Processing' for PROCESSING state", () => {
@@ -91,5 +91,15 @@ describe("deriveBuildStatus", () => {
 
   it("returns the raw state for unrecognised state strings", () => {
     expect(deriveBuildStatus("VALID", "SOME_NEW_STATE", null, false)).toBe("SOME_NEW_STATE");
+  });
+});
+
+describe("canRequestBuildExpiry", () => {
+  it("allows expiry requests for any build that is not already expired", () => {
+    expect(canRequestBuildExpiry({ expired: false })).toBe(true);
+  });
+
+  it("does not request expiry for builds already marked expired", () => {
+    expect(canRequestBuildExpiry({ expired: true })).toBe(false);
   });
 });

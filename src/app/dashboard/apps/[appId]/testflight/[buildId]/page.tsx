@@ -14,7 +14,7 @@ import { useFormDirty } from "@/lib/form-dirty-context";
 import { AppIcon } from "@/components/app-icon";
 import { CharCount } from "@/components/char-count";
 import { useBuildAction } from "@/lib/build-action-context";
-import type { TFBuild, TFGroup, TFTester } from "@/lib/asc/testflight";
+import type { TFBuild, TFGroup, TFTester } from "@/lib/asc/testflight/types";
 import { BUILD_STATUS_DOTS } from "@/lib/asc/display-types";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -122,6 +122,7 @@ export default function BuildDetailPage() {
         appId,
         buildId,
         status: build.status,
+        expired: build.expired,
         hasWhatsNew: (whatsNew?.length ?? 0) > 0,
         hasExternalGroup,
         whatsNew,

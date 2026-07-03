@@ -6,6 +6,7 @@ export interface BuildActionState {
   appId: string;
   buildId: string;
   status: string;
+  expired: boolean;
   hasWhatsNew: boolean;
   hasExternalGroup: boolean;
   whatsNew: string;

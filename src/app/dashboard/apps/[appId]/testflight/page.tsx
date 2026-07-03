@@ -43,7 +43,7 @@ import { FooterPortal } from "@/lib/footer-portal-context";
 import { BUILD_STATUS_DOTS } from "@/lib/asc/display-types";
 import { resolvePreReleaseVersion, PLATFORM_LABELS } from "@/lib/asc/version-types";
 import { useRegisterRefresh } from "@/lib/refresh-context";
-import type { TFBuild, TFGroup } from "@/lib/asc/testflight";
+import { canRequestBuildExpiry, type TFBuild, type TFGroup } from "@/lib/asc/testflight/types";
 import { formatDate } from "@/lib/format";
 
 export default function TestFlightBuildsPage() {
@@ -181,14 +181,11 @@ export default function TestFlightBuildsPage() {
     [groups, selectedBuildGroupIds],
   );
 
-  // Statuses that Apple allows expiring (matches BuildActionFooter logic)
-  const expirableStatuses = new Set(["Testing", "Ready to test", "Ready to submit"]);
-
   // Bulk action handlers
   async function bulkExpire() {
     setBulkLoading(true);
     const eligible = builds.filter(
-      (b) => selected.has(b.id) && expirableStatuses.has(b.status),
+      (b) => selected.has(b.id) && canRequestBuildExpiry(b),
     );
     const skipped = selected.size - eligible.length;
     const results = await Promise.allSettled(
@@ -201,9 +198,9 @@ export default function TestFlightBuildsPage() {
     if (failed === 0 && skipped === 0) {
       toast.success(`${ok} build${ok !== 1 ? "s" : ""} expired`);
     } else if (failed === 0) {
-      toast.success(`${ok} expired, ${skipped} skipped (not eligible)`);
+      toast.success(`${ok} expired, ${skipped} already expired`);
     } else {
-      toast.error(`${ok} expired, ${failed} failed, ${skipped} skipped`);
+      toast.error(`${ok} expired, ${failed} failed, ${skipped} already expired`);
     }
     setBulkLoading(false);
     setExpireOpen(false);

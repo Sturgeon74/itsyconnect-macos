@@ -237,3 +237,7 @@ export function deriveBuildStatus(
     default: return state ?? "Unknown";
   }
 }
+
+export function canRequestBuildExpiry(build: Pick<TFBuild, "expired">): boolean {
+  return !build.expired;
+}

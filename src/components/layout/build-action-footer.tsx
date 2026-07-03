@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-fetch";
 import { useBuildAction } from "@/lib/build-action-context";
 import { ActionFooter } from "@/components/layout/action-footer";
+import { canRequestBuildExpiry } from "@/lib/asc/testflight/types";
 
 function BetaSubmitChecklist({ hasWhatsNew, hasExternalGroup }: { hasWhatsNew: boolean; hasExternalGroup: boolean }) {
   const items = [
@@ -49,8 +50,17 @@ export function BuildActionFooter() {
 
   if (!state) return null;
 
-  const { appId, buildId, status, hasWhatsNew, hasExternalGroup } = state;
+  const { appId, buildId, status, expired, hasWhatsNew, hasExternalGroup } = state;
   const base = `/api/apps/${appId}/testflight/builds/${buildId}`;
+  const canExpire = canRequestBuildExpiry({ expired });
+  const expireButton = canExpire ? (
+    <ExpireButton
+      open={expireOpen}
+      onOpenChange={setExpireOpen}
+      loading={loading === "expire"}
+      onConfirm={() => act("expire", "Build expired")}
+    />
+  ) : null;
 
   async function act(action: string, successMsg: string) {
     setLoading(action);
@@ -70,12 +80,7 @@ export function BuildActionFooter() {
     return (
       <ActionFooter left={<BetaSubmitChecklist hasWhatsNew={hasWhatsNew} hasExternalGroup={hasExternalGroup} />}>
         <div className="flex items-center gap-2">
-          <ExpireButton
-            open={expireOpen}
-            onOpenChange={setExpireOpen}
-            loading={loading === "expire"}
-            onConfirm={() => act("expire", "Build expired")}
-          />
+          {expireButton}
           <Button
             disabled={!hasWhatsNew || !hasExternalGroup || loading !== null}
             onClick={async () => {
@@ -104,13 +109,16 @@ export function BuildActionFooter() {
   if (status === "Missing compliance") {
     return (
       <ActionFooter>
-        <Button
-          disabled={loading !== null}
-          onClick={() => act("export-compliance", "Export compliance declared")}
-        >
-          {loading === "export-compliance" && <Spinner className="mr-1.5" />}
-          Declare no encryption
-        </Button>
+        <div className="flex items-center gap-2">
+          {expireButton}
+          <Button
+            disabled={loading !== null}
+            onClick={() => act("export-compliance", "Export compliance declared")}
+          >
+            {loading === "export-compliance" && <Spinner className="mr-1.5" />}
+            Declare no encryption
+          </Button>
+        </div>
       </ActionFooter>
     );
   }
@@ -119,12 +127,7 @@ export function BuildActionFooter() {
     return (
       <ActionFooter>
         <div className="flex items-center gap-2">
-          <ExpireButton
-            open={expireOpen}
-            onOpenChange={setExpireOpen}
-            loading={loading === "expire"}
-            onConfirm={() => act("expire", "Build expired")}
-          />
+          {expireButton}
           <Button
             variant="outline"
             disabled={loading !== null}
@@ -153,10 +156,21 @@ export function BuildActionFooter() {
   if (status === "In beta review") {
     return (
       <ActionFooter>
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Timer size={14} />
-          Waiting for Apple review
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Timer size={14} />
+            Waiting for Apple review
+          </span>
+          {expireButton}
+        </div>
+      </ActionFooter>
+    );
+  }
+
+  if (canExpire) {
+    return (
+      <ActionFooter>
+        {expireButton}
       </ActionFooter>
     );
   }
@@ -202,4 +216,3 @@ function ExpireButton({
     </AlertDialog>
   );
 }
-

@@ -16,6 +16,8 @@ export type {
   TFDiagnosticInsight,
 } from "./types";
 
+export { canRequestBuildExpiry } from "./types";
+
 export {
   listBuilds,
   fetchBuildMetrics,
