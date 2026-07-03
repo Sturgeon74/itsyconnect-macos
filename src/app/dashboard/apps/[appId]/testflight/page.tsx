@@ -45,6 +45,7 @@ import { resolvePreReleaseVersion, PLATFORM_LABELS } from "@/lib/asc/version-typ
 import { useRegisterRefresh } from "@/lib/refresh-context";
 import { canRequestBuildExpiry, type TFBuild, type TFGroup } from "@/lib/asc/testflight/types";
 import { formatDate } from "@/lib/format";
+import { updateRangeSelection } from "@/lib/range-selection";
 
 export default function TestFlightBuildsPage() {
   const { appId } = useParams<{ appId: string }>();
@@ -63,6 +64,7 @@ export default function TestFlightBuildsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [lastSelectedBuildId, setLastSelectedBuildId] = useState<string | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [expireOpen, setExpireOpen] = useState(false);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function TestFlightBuildsPage() {
     setLoading(true);
     setError(null);
     setSelected(new Set());
+    setLastSelectedBuildId(null);
     setCurrentPage(1);
     try {
       const params = new URLSearchParams();
@@ -141,6 +144,7 @@ export default function TestFlightBuildsPage() {
   const someSelected = selectableBuilds.some((b) => selected.has(b.id));
 
   function toggleAll() {
+    setLastSelectedBuildId(null);
     if (allSelected) {
       setSelected((prev) => {
         const next = new Set(prev);
@@ -156,13 +160,18 @@ export default function TestFlightBuildsPage() {
     }
   }
 
-  function toggleOne(buildId: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(buildId)) next.delete(buildId);
-      else next.add(buildId);
-      return next;
-    });
+  function toggleOne(buildId: string, range: boolean) {
+    const orderedIds = selectableBuilds.map((build) => build.id);
+    setSelected((prev) =>
+      updateRangeSelection({
+        selectedIds: prev,
+        orderedIds,
+        targetId: buildId,
+        anchorId: lastSelectedBuildId,
+        range,
+      }),
+    );
+    setLastSelectedBuildId(buildId);
   }
 
   // Groups relevant to selected builds (for "remove from group")
@@ -313,7 +322,11 @@ export default function TestFlightBuildsPage() {
         items={builds}
         perPage={perPage}
         currentPage={currentPage}
-        onPageChange={(page) => { setCurrentPage(page); setSelected(new Set()); }}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          setSelected(new Set());
+          setLastSelectedBuildId(null);
+        }}
       >
         {(pageItems) => (
           <Table>
@@ -360,8 +373,10 @@ export default function TestFlightBuildsPage() {
                       {!build.expired && (
                         <Checkbox
                           checked={selected.has(build.id)}
-                          onCheckedChange={() => toggleOne(build.id)}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleOne(build.id, event.shiftKey);
+                          }}
                           aria-label={`Select build ${build.buildNumber}`}
                         />
                       )}
