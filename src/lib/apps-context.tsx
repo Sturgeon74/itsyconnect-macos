@@ -1,10 +1,18 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 export interface ConnectionError {
-  message: string;
   category: "auth" | "connection" | "api" | "network";
+  /** Server or ASC detail (English when from Apple). */
+  message: string;
+  /** Client-side fallback when no server message is available. */
+  key?: MessageKey;
+  /** Server fallback key (AscError.fallbackKey) – localizable default message. */
+  messageKey?: string;
+  /** HTTP status from App Store Connect, when known. */
+  status?: number;
 }
 
 export interface App {
@@ -67,7 +75,10 @@ export function AppsProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError({
-          message: data.error || "Failed to load apps",
+          message: typeof data.error === "string" ? data.error : "",
+          key: data.error ? undefined : "connectionErrors.loadAppsFailed",
+          messageKey: typeof data.messageKey === "string" ? data.messageKey : undefined,
+          status: typeof data.statusCode === "number" ? data.statusCode : undefined,
           category: data.category ?? "api",
         });
         return;
@@ -78,7 +89,7 @@ export function AppsProvider({ children }: { children: React.ReactNode }) {
       setApps(normalized);
       setError(null);
     } catch {
-      setError({ message: "Could not connect to the server", category: "network" });
+      setError({ message: "", key: "connectionErrors.networkFailed", category: "network" });
     } finally {
       setLoading(false);
     }

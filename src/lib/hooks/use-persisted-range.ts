@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 function readStored(key: string): string | null {
+  if (typeof window === "undefined") return null;
   try {
     return localStorage.getItem(key);
   } catch {
@@ -18,37 +19,69 @@ function writeStored(key: string, value: string | null) {
   } catch {}
 }
 
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const listener of listeners) listener();
+}
+
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+/**
+ * localStorage-backed state via useSyncExternalStore: hydration-safe (server
+ * renders the default) without re-rendering a default-value frame on
+ * client-side navigations.
+ */
 export function usePersistedRange(storageKey: string): [string | null, (v: string | null) => void] {
-  const [range, setRange] = useState<string | null>(() => readStored(storageKey));
+  const range = useSyncExternalStore(
+    subscribe,
+    () => readStored(storageKey),
+    () => null,
+  );
 
   const update = useCallback((v: string | null) => {
-    setRange(v);
     writeStored(storageKey, v);
+    emit();
   }, [storageKey]);
 
   return [range, update];
 }
 
 export function usePersistedState(storageKey: string, defaultValue: string): [string, (v: string) => void] {
-  const [value, setValue] = useState(() => readStored(storageKey) ?? defaultValue);
+  const value = useSyncExternalStore(
+    subscribe,
+    () => readStored(storageKey) ?? defaultValue,
+    () => defaultValue,
+  );
 
   const update = useCallback((v: string) => {
-    setValue(v);
     writeStored(storageKey, v);
+    emit();
   }, [storageKey]);
 
   return [value, update];
 }
 
 export function usePersistedBool(storageKey: string, defaultValue: boolean): [boolean, (v: boolean) => void] {
-  const [value, setValue] = useState(() => {
-    const stored = readStored(storageKey);
-    return stored !== null ? stored === "1" : defaultValue;
-  });
+  const value = useSyncExternalStore(
+    subscribe,
+    () => {
+      const stored = readStored(storageKey);
+      return stored !== null ? stored === "1" : defaultValue;
+    },
+    () => defaultValue,
+  );
 
   const update = useCallback((v: boolean) => {
-    setValue(v);
     writeStored(storageKey, v ? "1" : "0");
+    emit();
   }, [storageKey]);
 
   return [value, update];

@@ -53,7 +53,10 @@ export function VersionsProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError({
-          message: data.error || "Failed to load versions",
+          message: typeof data.error === "string" ? data.error : "",
+          key: data.error ? undefined : "connectionErrors.loadVersionsFailed",
+          messageKey: typeof data.messageKey === "string" ? data.messageKey : undefined,
+          status: typeof data.statusCode === "number" ? data.statusCode : undefined,
           category: data.category ?? "api",
         });
         return;
@@ -63,7 +66,7 @@ export function VersionsProvider({ children }: { children: React.ReactNode }) {
       setVersions(data.versions ?? []);
       setError(null);
     } catch {
-      setError({ message: "Could not connect to the server", category: "network" });
+      setError({ message: "", key: "connectionErrors.networkFailed", category: "network" });
     } finally {
       setLoading(false);
     }
