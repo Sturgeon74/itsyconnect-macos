@@ -21,17 +21,19 @@ import { NavFooter } from "./nav-footer";
 import { useUnreadReviewsPoller } from "@/lib/hooks/use-unread-reviews";
 import { useGlobalUnseenCount } from "@/lib/hooks/use-seen-reviews";
 import { useApps } from "@/lib/apps-context";
+import { useTranslations } from "@/lib/i18n/locale-context";
 
 function PortfolioButton() {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigation } = useFormDirty();
+  const t = useTranslations();
   const isActive = pathname === "/dashboard";
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="Portfolio ⌘P" isActive={isActive}>
+        <SidebarMenuButton asChild tooltip={`${t("nav.portfolio")} ⌘P`} isActive={isActive}>
           <Link
             href="/dashboard"
             onNavigate={(e) => {
@@ -41,7 +43,7 @@ function PortfolioButton() {
             }}
           >
             <SquaresFour size={16} />
-            <span>Portfolio</span>
+            <span>{t("nav.portfolio")}</span>
             <kbd className="ml-auto text-[13px] text-muted-foreground/50">⌘P</kbd>
           </Link>
         </SidebarMenuButton>
@@ -54,13 +56,14 @@ function ReviewCenterButton() {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigation } = useFormDirty();
+  const t = useTranslations();
   const isActive = pathname === "/dashboard/reviews";
   const unseen = useGlobalUnseenCount();
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="Review center ⌘⇧R" isActive={isActive}>
+        <SidebarMenuButton asChild tooltip={`${t("nav.reviewCenter")} ⌘⇧R`} isActive={isActive}>
           <Link
             href="/dashboard/reviews"
             onNavigate={(e) => {
@@ -70,7 +73,7 @@ function ReviewCenterButton() {
             }}
           >
             <ChatsCircle size={16} />
-            <span>Review center</span>
+            <span>{t("nav.reviewCenter")}</span>
             {unseen > 0 ? (
               <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
                 {unseen}
@@ -126,12 +129,8 @@ export function AppSidebar() {
   const router = useRouter();
   const { apps } = useApps();
   const { guardNavigation } = useFormDirty();
-  const [lastAppId, setLastAppId] = useState<string>();
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only localStorage read
-    if (!appId) setLastAppId(getLastAppId());
-  }, [appId]);
-  const navAppId = appId ?? lastAppId;
+  // Rendered with ssr:false, so the synchronous localStorage read is safe.
+  const navAppId = appId ?? getLastAppId() ?? undefined;
 
   // Poll review counts for all apps to track unread state
   const appIds = useMemo(() => apps.map((a) => a.id), [apps]);
@@ -171,14 +170,14 @@ export function AppSidebar() {
         guardNavigation(() => router.push(url));
         return;
       }
-      const activeId = appId ?? lastAppId;
+      const activeId = navAppId;
       const subpath = PAGE_SHORTCUTS[e.key];
       if (activeId && subpath !== undefined) {
         e.preventDefault();
         guardNavigation(() => router.push(`/dashboard/apps/${activeId}${subpath}`));
       }
     },
-    [apps, appId, lastAppId, router, guardNavigation],
+    [apps, appId, navAppId, router, guardNavigation],
   );
 
   useEffect(() => {

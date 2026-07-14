@@ -21,8 +21,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useTranslations } from "@/lib/i18n/locale-context";
 
 export function AppSwitcher() {
+  const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const { appId } = useParams<{ appId?: string }>();
@@ -31,6 +33,7 @@ export function AppSwitcher() {
   const { guardNavigation } = useFormDirty();
   const [search, setSearch] = useState("");
 
+  // Rendered with ssr:false, so the synchronous localStorage read is safe.
   const activeApp = apps.find((a) => a.id === appId)
     ?? apps.find((a) => a.id === getLastAppId());
 
@@ -69,7 +72,6 @@ export function AppSwitcher() {
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              suppressHydrationWarning
             >
               {loading ? (
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted">
@@ -84,7 +86,7 @@ export function AppSwitcher() {
                 />
               ) : null}
               <span className="truncate font-semibold text-sm">
-                {activeApp?.name ?? "Select an app"}
+                {activeApp?.name ?? t("appSwitcher.selectApp")}
               </span>
               <CaretUpDown className="ml-auto" size={16} />
             </SidebarMenuButton>
@@ -97,7 +99,7 @@ export function AppSwitcher() {
             onCloseAutoFocus={() => setSearch("")}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Apps
+              {t("appSwitcher.apps")}
             </DropdownMenuLabel>
             {apps.length > 5 && (
               <div className="px-2 pb-1">
@@ -107,7 +109,7 @@ export function AppSwitcher() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={(e) => e.stopPropagation()}
-                    placeholder="Search apps…"
+                    placeholder={t("appSwitcher.searchApps")}
                     className="h-8 w-full rounded-md border bg-transparent pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                     autoFocus
                   />
@@ -117,12 +119,12 @@ export function AppSwitcher() {
             <div className="max-h-72 overflow-y-auto">
               {apps.length === 0 && !loading && (
                 <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                  No apps found
+                  {t("appSwitcher.noAppsFound")}
                 </div>
               )}
               {filteredApps.length === 0 && search && (
                 <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                  No matching apps
+                  {t("appSwitcher.noMatchingApps")}
                 </div>
               )}
               {filteredApps.map((app) => {
