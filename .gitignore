@@ -29,6 +29,7 @@
 .DS_Store
 .superset
 *.pem
+/install-local-app.sh
 
 # script output
 /scripts/output/

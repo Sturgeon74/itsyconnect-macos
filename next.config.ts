@@ -25,6 +25,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: process.cwd(),
+  turbopack: {
+    root: process.cwd(),
+  },
   allowedDevOrigins: ["127.0.0.1"],
   env: { NEXT_PUBLIC_MAS: process.env.MAS ?? "" },
   images: {
