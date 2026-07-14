@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +17,8 @@ import { Stars } from "./review-summary";
 import { territoryName } from "./territory-helpers";
 import type { Review } from "./territory-helpers";
 import { AppIcon } from "@/components/app-icon";
+import { useTranslations } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/format";
 
 interface ReviewCardProps {
   review: Review;
@@ -52,6 +56,8 @@ export function ReviewCard({
   seen,
   onToggleSeen,
 }: ReviewCardProps) {
+  const t = useTranslations();
+
   return (
     <Card key={review.id}>
       <CardContent className="space-y-2 py-0">
@@ -77,14 +83,7 @@ export function ReviewCard({
             </p>
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
-            {new Date(review.createdDate).toLocaleDateString(
-              "en-GB",
-              {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              },
-            )}
+            {formatDate(review.createdDate)}
           </span>
         </div>
 
@@ -112,10 +111,10 @@ export function ReviewCard({
               <Translate size={14} />
             )}
             {isTranslating
-              ? "Translating…"
+              ? t("reviews.translating")
               : translated
-                ? "Show original"
-                : "Translate"}
+                ? t("reviews.showOriginal")
+                : t("reviews.translate")}
           </button>
         )}
 
@@ -136,12 +135,12 @@ export function ReviewCard({
                 {seen ? (
                   <>
                     <ArrowCounterClockwise size={14} className="mr-1.5" />
-                    Mark as unseen
+                    {t("reviews.markUnseen")}
                   </>
                 ) : (
                   <>
                     <Check size={14} className="mr-1.5" />
-                    Mark as seen
+                    {t("reviews.markSeen")}
                   </>
                 )}
               </Button>
@@ -154,7 +153,7 @@ export function ReviewCard({
                 onClick={() => onAppeal(review)}
               >
                 <WarningCircle size={14} className="mr-1.5" />
-                Appeal review
+                {t("reviews.appealReview")}
               </Button>
             )}
             {!review.response && (
@@ -164,7 +163,7 @@ export function ReviewCard({
                 onClick={() => onReply(review)}
               >
                 <ChatText size={14} className="mr-1.5" />
-                Reply
+                {t("reviews.reply")}
               </Button>
             )}
           </div>
@@ -176,14 +175,14 @@ export function ReviewCard({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <p className="text-xs font-medium">
-                  Developer response
+                  {t("reviews.developerResponse")}
                 </p>
                 {review.response.state === "PENDING_PUBLISH" && (
                   <Badge
                     variant="outline"
                     className="text-[10px] px-1.5 py-0"
                   >
-                    Pending
+                    {t("reviews.pending")}
                   </Badge>
                 )}
               </div>
@@ -210,13 +209,7 @@ export function ReviewCard({
                   )}
                 </Button>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(
-                    review.response.lastModifiedDate,
-                  ).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDate(review.response.lastModifiedDate)}
                 </span>
               </div>
             </div>
