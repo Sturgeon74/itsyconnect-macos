@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,14 +13,8 @@ import { AppIcon } from "@/components/app-icon";
 import type { TFBuild } from "@/lib/asc/testflight/types";
 import type { AscBuild } from "@/lib/asc/version-types";
 import { BUILD_STATUS_DOTS } from "@/lib/asc/display-types";
-
-function formatBuildDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { useTranslations } from "@/lib/i18n/locale-context";
+import { formatDate } from "@/lib/format";
 
 export function BuildSection({
   allBuilds,
@@ -39,19 +35,18 @@ export function BuildSection({
   onRefresh: () => Promise<void>;
   readOnly: boolean;
 }) {
+  const t = useTranslations();
   const [loading, setLoading] = useState(false);
 
   const selectedBuild = selectedBuildId
     ? allBuilds.find((b) => b.id === selectedBuildId) ?? null
     : null;
 
-  // Filter to builds matching the current App Store version string (ASC rejects mismatches)
   const eligibleBuilds = useMemo(() => {
     if (!versionString) return allBuilds.filter((b) => !b.expired);
     return allBuilds.filter((b) => !b.expired && b.versionString === versionString);
   }, [allBuilds, versionString]);
 
-  // Read-only: use the version's own build data (may not exist in TF builds list)
   if (readOnly) {
     const build = selectedBuild ?? versionBuild;
     const buildNumber = selectedBuild?.buildNumber ?? versionBuild?.attributes.version;
@@ -62,22 +57,22 @@ export function BuildSection({
 
     return (
       <section className="space-y-2">
-        <h3 className="section-title">Build</h3>
+        <h3 className="section-title">{t("storeListing.build.title")}</h3>
         {build ? (
           <div className="flex items-center gap-4 rounded-lg border p-4">
             <AppIcon iconUrl={iconUrl} name={`Build ${buildNumber}`} className="size-10" iconSize={20} />
             <div>
-              <p className="font-semibold">Build {buildNumber}</p>
+              <p className="font-semibold">{t("storeListing.build.title")} {buildNumber}</p>
               {uploadedDate && (
                 <p className="text-sm text-muted-foreground">
-                  {formatBuildDate(uploadedDate)}
+                  {formatDate(uploadedDate)}
                 </p>
               )}
             </div>
           </div>
         ) : (
           <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No build attached to this version.
+            {t("storeListing.build.noBuild")}
           </div>
         )}
       </section>
@@ -98,7 +93,7 @@ export function BuildSection({
     <DropdownMenu onOpenChange={handleOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
-          {selectedBuild ? "Change" : "Select build"}
+          {selectedBuild ? t("storeListing.build.change") : t("storeListing.build.selectBuild")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-y-auto">
@@ -108,7 +103,7 @@ export function BuildSection({
           </div>
         ) : eligibleBuilds.length === 0 ? (
           <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-            No eligible builds for version {versionString}
+            {t("storeListing.build.noEligibleBuilds", { version: versionString ?? "" })}
           </div>
         ) : (
           eligibleBuilds.map((b) => (
@@ -120,7 +115,7 @@ export function BuildSection({
                   <span className="text-xs text-muted-foreground">{b.status}</span>
                 </div>
                 <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                  {formatBuildDate(b.uploadedDate)}
+                  {formatDate(b.uploadedDate)}
                 </span>
               </div>
             </DropdownMenuItem>
@@ -130,7 +125,6 @@ export function BuildSection({
     </DropdownMenu>
   );
 
-  // Build is selected but not yet in the TF builds list – fall back to version build data
   if (!selectedBuild && selectedBuildId && versionBuild) {
     const buildNumber = versionBuild.attributes.version;
     const uploadedDate = versionBuild.attributes.uploadedDate;
@@ -139,19 +133,19 @@ export function BuildSection({
 
     return (
       <section className="space-y-2">
-        <h3 className="section-title">Build</h3>
+        <h3 className="section-title">{t("storeListing.build.title")}</h3>
         <div className="flex items-center gap-4 rounded-lg border p-4">
           <AppIcon iconUrl={iconUrl} name={`Build ${buildNumber}`} className="size-10" iconSize={20} />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">Build {buildNumber}</p>
+            <p className="font-semibold">{t("storeListing.build.title")} {buildNumber}</p>
             {uploadedDate && (
               <p className="text-sm text-muted-foreground">
-                {formatBuildDate(uploadedDate)}
+                {formatDate(uploadedDate)}
               </p>
             )}
           </div>
           <Button variant="ghost" size="sm" onClick={onBuildRemove}>
-            Remove
+            {t("common.remove")}
           </Button>
           {picker}
         </div>
@@ -162,7 +156,7 @@ export function BuildSection({
   if (!selectedBuild) {
     return (
       <section className="space-y-2">
-        <h3 className="section-title">Build</h3>
+        <h3 className="section-title">{t("storeListing.build.title")}</h3>
         <div className="flex items-center justify-center rounded-lg border border-dashed p-6">
           {picker}
         </div>
@@ -172,17 +166,17 @@ export function BuildSection({
 
   return (
     <section className="space-y-2">
-      <h3 className="section-title">Build</h3>
+      <h3 className="section-title">{t("storeListing.build.title")}</h3>
       <div className="flex items-center gap-4 rounded-lg border p-4">
         <AppIcon iconUrl={selectedBuild.iconUrl} name={`Build ${selectedBuild.buildNumber}`} className="size-10" iconSize={20} />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Build {selectedBuild.buildNumber}</p>
+          <p className="font-semibold">{t("storeListing.build.title")} {selectedBuild.buildNumber}</p>
           <p className="text-sm text-muted-foreground">
-            {formatBuildDate(selectedBuild.uploadedDate)}
+            {formatDate(selectedBuild.uploadedDate)}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onBuildRemove}>
-          Remove
+          {t("common.remove")}
         </Button>
         {picker}
       </div>
